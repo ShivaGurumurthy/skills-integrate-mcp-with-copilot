@@ -4,10 +4,38 @@ document.addEventListener("DOMContentLoaded", () => {
   const signupForm = document.getElementById("signup-form");
   const messageDiv = document.getElementById("message");
 
-  // Function to fetch activities from API
+  // Add event listeners for filters
+  document.getElementById("category-filter").addEventListener("change", fetchActivities);
+  document.getElementById("day-filter").addEventListener("change", fetchActivities);
+  document.getElementById("sort-filter").addEventListener("change", fetchActivities);
+  
+  // Add debounced search
+  const searchInput = document.getElementById("search-input");
+  let searchTimeout;
+  searchInput.addEventListener("input", () => {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(fetchActivities, 300);
+  });
+
+  // Function to fetch activities from API with filters
   async function fetchActivities() {
     try {
-      const response = await fetch("/activities");
+      const category = document.getElementById("category-filter").value;
+      const day = document.getElementById("day-filter").value;
+      const sort = document.getElementById("sort-filter").value;
+      const search = document.getElementById("search-input").value;
+
+      // Build query parameters
+      const params = new URLSearchParams();
+      if (category) params.append("category", category);
+      if (day) params.append("day", day);
+      if (sort) params.append("sort", sort);
+      if (search) params.append("search", search);
+
+      const queryString = params.toString();
+      const url = `/activities${queryString ? `?${queryString}` : ''}`;
+      
+      const response = await fetch(url);
       const activities = await response.json();
 
       // Clear loading message
@@ -42,6 +70,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <p>${details.description}</p>
           <p><strong>Schedule:</strong> ${details.schedule}</p>
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
+          ${details.note ? `<p class="registration-note"><strong>Note:</strong> ${details.note}</p>` : ''}
           <div class="participants-container">
             ${participantsHTML}
           </div>
@@ -155,6 +184,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Initialize app
+  // Initialize app by fetching activities
+  fetchActivities();
   fetchActivities();
 });
